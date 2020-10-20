@@ -34,6 +34,8 @@ class ItemWeight:
     current_weight: int
     effective_weight: int
 
+    __slots__ = ('key', 'weight', 'current_weight', 'effective_weight')
+
     def __init__(self, key, weight):
         self.key = key
         self.weight = weight

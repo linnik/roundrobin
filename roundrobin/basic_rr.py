@@ -1,4 +1,4 @@
-from itertools import cycle, islice
+from itertools import cycle
 from typing import Any, Callable
 
 

@@ -1,11 +1,8 @@
-from typing import Callable, Optional, Tuple
-
-
-def smooth(dataset: [Tuple[str, int]]) -> Callable[[], Optional[str]]:
+def smooth(dataset):
     dataset_length = len(dataset)
     dataset_extra_weights = [ItemWeight(*x) for x in dataset]
 
-    def get_next() -> Optional[str]:
+    def get_next():
         if dataset_length == 0:
             return None
         if dataset_length == 1:
@@ -20,19 +17,15 @@ def smooth(dataset: [Tuple[str, int]]) -> Callable[[], Optional[str]]:
                 extra.effective_weight += 1
             if not result or result.current_weight < extra.current_weight:
                 result = extra
-        if result:
-            result.current_weight -= total_weight
-            return result.key
-        return None
+        if not result:  # this should be unreachable, but check anyway
+            raise RuntimeError
+        result.current_weight -= total_weight
+        return result.key
 
     return get_next
 
 
 class ItemWeight:
-    key: str
-    weight: int
-    current_weight: int
-    effective_weight: int
 
     __slots__ = ('key', 'weight', 'current_weight', 'effective_weight')
 

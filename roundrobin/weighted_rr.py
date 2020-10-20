@@ -1,10 +1,21 @@
-import math
-from typing import Callable, Optional, Tuple
+try:
+    from math import gcd
+except ImportError:
+    from fractions import gcd
 
 
-def weighted(dataset: [Tuple[str, int]]) -> Callable[[], Optional[str]]:
-    current_index = -1
-    current_weight = 0
+# python2 workaround for python3 nonlocal keyword
+class Store:
+    __slots__ = ('index', 'weight')
+
+    def __init__(self, index, weight):
+        self.index = index
+        self.weight = weight
+
+
+def weighted(dataset):
+    current = Store(index=-1, weight=0)
+
     dataset_length = len(dataset)
     dataset_max_weight = 0
     dataset_gcd_weight = 0
@@ -12,20 +23,18 @@ def weighted(dataset: [Tuple[str, int]]) -> Callable[[], Optional[str]]:
     for _, weight in dataset:
         if dataset_max_weight < weight:
             dataset_max_weight = weight
-        dataset_gcd_weight = math.gcd(dataset_gcd_weight, weight)
+        dataset_gcd_weight = gcd(dataset_gcd_weight, weight)
 
-    def get_next() -> Optional[str]:
-        nonlocal current_index
-        nonlocal current_weight
+    def get_next():
         while True:
-            current_index = (current_index + 1) % dataset_length
-            if current_index == 0:
-                current_weight = current_weight - dataset_gcd_weight
-                if current_weight <= 0:
-                    current_weight = dataset_max_weight
-                    if current_weight == 0:
+            current.index = (current.index + 1) % dataset_length
+            if current.index == 0:
+                current.weight = current.weight - dataset_gcd_weight
+                if current.weight <= 0:
+                    current.weight = dataset_max_weight
+                    if current.weight == 0:
                         return None
-            if dataset[current_index][1] >= current_weight:
-                return dataset[current_index][0]
+            if dataset[current.index][1] >= current.weight:
+                return dataset[current.index][0]
 
     return get_next

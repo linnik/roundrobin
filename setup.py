@@ -1,24 +1,31 @@
-import pathlib
-
+import os
 import setuptools
 
-HERE = pathlib.Path(__file__).parent
-README = (HERE / "README.md").read_text()
+README_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "README.md")
 
-setuptools.setup(
-    name="roundrobin",
-    version="0.0.1",
-    description="Collection of roundrobin utilities",
-    long_description=README,
-    long_description_content_type="text/markdown",
-    url="https://github.com/linnik/roundrobin",
-    author="Vyacheslav Linnik",
-    author_email="hello@slavalinnik.com",
-    license="MIT",
-    classifiers=[
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
-    ],
-    packages=setuptools.find_packages(),
-)
+
+def setup():
+    readme_content = ''
+    with open(README_PATH, "r") as fp:
+        readme_content = fp.read()
+    setuptools.setup(
+        name="roundrobin",
+        version="0.0.2",
+        description="Collection of roundrobin utilities",
+        long_description=readme_content,
+        long_description_content_type="text/markdown",
+        url="https://github.com/linnik/roundrobin",
+        author="Vyacheslav Linnik",
+        author_email="hello@slavalinnik.com",
+        license="MIT",
+        classifiers=[
+            "License :: OSI Approved :: MIT License",
+            "Programming Language :: Python :: 2",
+            "Programming Language :: Python :: 3",
+        ],
+        packages=setuptools.find_packages(),
+    )
+
+
+if __name__ == "__main__":
+    setup()

@@ -1,8 +1,7 @@
 from itertools import cycle
-from typing import Any, Callable
 
 
-def basic(dataset: [Any]) -> Callable[[], Any]:
+def basic(dataset):
     iterator = cycle(dataset)
 
     def get_next():

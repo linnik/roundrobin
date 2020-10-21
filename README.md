@@ -1,3 +1,9 @@
+[![Build Status](https://travis-ci.org/linnik/roundrobin.svg?branch=master)](https://travis-ci.org/linnik/roundrobin)
+[![PyPI install](https://img.shields.io/badge/pip%20install-roundrobin-informational)](https://pypi.org/project/roundrobin/)
+![versions](https://img.shields.io/pypi/pyversions/pybadges.svg)
+
+# roundrobin
+
 This is rather small collection of round robin utilites
 
 ```python

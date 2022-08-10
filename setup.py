@@ -10,7 +10,7 @@ def setup():
         readme_content = fp.read()
     setuptools.setup(
         name="roundrobin",
-        version="0.0.3",
+        version="0.0.4",
         description="Collection of roundrobin utilities",
         long_description=readme_content,
         long_description_content_type="text/markdown",

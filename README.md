@@ -4,7 +4,7 @@
 
 # roundrobin
 
-This is rather small collection of round robin utilites
+This is rather small collection of round robin utilities
 
 ```python
 >>> import roundrobin

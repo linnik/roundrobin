@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-01-25
+
 ### Added
 - `roundrobin.smooth_stateful()` to support slow-start / health-check behavior by adjusting `effective_weight` between calls.
 

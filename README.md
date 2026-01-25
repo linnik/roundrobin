@@ -5,6 +5,7 @@
 # roundrobin
 
 This is rather small collection of round robin utilites
+See `CHANGELOG.md` for notable changes.
 
 ```python
 >>> import roundrobin
@@ -20,4 +21,3 @@ This is rather small collection of round robin utilites
 >>> ''.join([get_weighted_smooth() for _ in range(7)])
 'AABACAA'
 ```
-

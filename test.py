@@ -5,6 +5,14 @@ import roundrobin
 
 class WeightCase(unittest.TestCase):
 
+    def test_empty_dataset(self):
+        with self.assertRaises(ValueError):
+            roundrobin.basic([])
+        with self.assertRaises(ValueError):
+            roundrobin.smooth([])
+        with self.assertRaises(ValueError):
+            roundrobin.weighted([])
+
     def test_basic(self):
         data = ["A", "B", "C"]
         get_next = roundrobin.basic(data)

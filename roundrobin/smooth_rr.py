@@ -1,10 +1,11 @@
 def smooth(dataset):
+    dataset = list(dataset)
+    if len(dataset) == 0:
+        raise ValueError("dataset must be non-empty")
     dataset_length = len(dataset)
     dataset_extra_weights = [ItemWeight(*x) for x in dataset]
 
     def get_next():
-        if dataset_length == 0:
-            return None
         if dataset_length == 1:
             return dataset[0][0]
 

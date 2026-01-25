@@ -1,7 +1,7 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Iterable, Tuple
 
 
-def smooth(dataset: [Tuple[Any, int]]) -> Callable[[], Any]:
+def smooth(dataset: Iterable[Tuple[Any, int]]) -> Callable[[], Any]:
     def get_next() -> Any: ...
 
 

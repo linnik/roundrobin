@@ -14,6 +14,9 @@ class Store:
 
 
 def weighted(dataset):
+    dataset = list(dataset)
+    if len(dataset) == 0:
+        raise ValueError("dataset must be non-empty")
     current = Store(index=-1, weight=0)
 
     dataset_length = len(dataset)

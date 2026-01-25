@@ -10,7 +10,7 @@ def setup():
         readme_content = fp.read()
     setuptools.setup(
         name="roundrobin",
-        version="0.0.4",
+        version="0.1.0",
         description="Collection of roundrobin utilities",
         long_description=readme_content,
         long_description_content_type="text/markdown",
@@ -29,6 +29,14 @@ def setup():
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.9',
+            'Programming Language :: Python :: 3.10',
+            'Programming Language :: Python :: 3.11',
+            'Programming Language :: Python :: 3.12',
+            'Programming Language :: Python :: 3.13',
+            'Programming Language :: Python :: 3.14',
+            'Programming Language :: Python :: 3.15',
+            'Programming Language :: Python :: Implementation :: PyPy',
             'Operating System :: OS Independent',
         ],
         packages=setuptools.find_packages(),

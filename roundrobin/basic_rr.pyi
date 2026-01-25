@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 
-def basic(dataset: [Any]) -> Callable[[], Any]: ...
+def basic(dataset: Iterable[Any]) -> Callable[[], Any]: ...

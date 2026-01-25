@@ -19,6 +19,8 @@ class WeightCase(unittest.TestCase):
 
     def test_negative_weights_raise(self):
         with self.assertRaises(ValueError):
+            roundrobin.weighted([("A", -1)])
+        with self.assertRaises(ValueError):
             roundrobin.smooth([("A", -1)])
         with self.assertRaises(ValueError):
             roundrobin.smooth_stateful([("A", -1)])
@@ -273,6 +275,11 @@ class WeightCase(unittest.TestCase):
         get_next = roundrobin.weighted(data)
         result = ''.join([get_next() for _ in range(7)])
         self.assertEqual(result, 'AAAAABC')
+
+    def test_weighted_all_zero_returns_basic(self):
+        get_next = roundrobin.weighted([("A", 0), ("B", 0), ("C", 0)])
+        result = ''.join([get_next() for _ in range(4)])
+        self.assertEqual(result, 'ABCA')
 
     def test_weighted(self):
         data = [("A", 50), ("B", 35), ("C", 15)]

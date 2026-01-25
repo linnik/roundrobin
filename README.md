@@ -1,4 +1,5 @@
 [![Tests](https://github.com/linnik/roundrobin/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/linnik/roundrobin/actions/workflows/tests.yml)
+[![Coverage](https://codecov.io/gh/linnik/roundrobin/branch/master/graph/badge.svg)](https://codecov.io/gh/linnik/roundrobin)
 [![PyPI install](https://img.shields.io/badge/pip%20install-roundrobin-informational)](https://pypi.org/project/roundrobin/)
 ![versions](https://img.shields.io/pypi/pyversions/roundrobin.svg)
 

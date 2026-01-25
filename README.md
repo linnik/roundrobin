@@ -4,8 +4,20 @@
 
 # roundrobin
 
-This is rather small collection of round robin utilites
-See `CHANGELOG.md` for notable changes.
+A small collection of round-robin selectors:
+
+- `basic()` - plain round-robin (A, B, C, A, B, C, ...)
+- `weighted()` - weighted round-robin (classic LVS-style)
+- `smooth()` - smooth weighted round-robin (Nginx-style; avoids long clumps)
+- `smooth_stateful()` - smooth weighted RR with runtime controls (health checks / slow-start)
+
+## Install
+
+```bash
+pip install roundrobin
+```
+
+## Quickstart
 
 ```python
 >>> import roundrobin
@@ -21,3 +33,157 @@ See `CHANGELOG.md` for notable changes.
 >>> ''.join([get_weighted_smooth() for _ in range(7)])
 'AABACAA'
 ```
+
+## Stateful smooth weighted round-robin
+
+`smooth_stateful()` uses the same "smooth" algorithm as `smooth()`, but returns a selector object you can tune at runtime (health checks, slow-start).
+
+What you get:
+
+- call `rr()` to get the next key
+- use `rr.set(key, weight=..., effective=...)` to adjust weights
+- use `rr.disable(key)` to take items out of rotation
+- use `rr.enable(key, effective_weight=0)` to re-enable (0 for slow-start; omit for full weight)
+- use `rr.reset(key)` to restore `effective_weight` to full (the current configured `weight`)
+
+Weights:
+
+- **weight** - the configured (base) weight representing target capacity
+- **effective_weight** - the weight used for selection right now (clamped to `[0, weight]`)
+
+Slow-start: set `effective_weight` below `weight` (either via `initial_effective=...` at creation time, or via `set()` / `enable()` later). When `effective_weight < weight`, it auto-ramps by +1 after every `rr()` call until it reaches `weight` again (unless the item is disabled).
+
+Statefulness note: the selector keeps internal per-item state (e.g., accumulated `current_weight`), so sequences after changes can look surprising and depend on prior calls. These methods affect future picks; they do not restart the schedule. If you want a clean slate after changes, create a new selector instance. The examples below create a new selector for each scenario so outputs are easy to reason about.
+
+```python
+>>> take = lambda source, n: ''.join([source() for _ in range(n)])
+>>> rr = roundrobin.smooth_stateful([("A", 5), ("B", 1), ("C", 1)])
+>>> take(rr, 14)
+'AABACAAAABACAA'
+
+>>> # set() changes weights for future picks
+>>> rr = roundrobin.smooth_stateful([("A", 5), ("B", 1), ("C", 1)])
+>>> rr.set("A", weight=2)
+>>> take(rr, 14)
+'ABCAABCAABCAAB'
+
+>>> # disable() removes an item from rotation
+>>> rr = roundrobin.smooth_stateful([("A", 5), ("B", 1), ("C", 1)])
+>>> rr.disable("A")
+>>> take(rr, 14)
+'BCBCBCBCBCBCBC'
+
+>>> # enable() can bring an item back with slow-start (start at 0 and ramp up)
+>>> rr = roundrobin.smooth_stateful([("A", 5), ("B", 1), ("C", 1)])
+>>> rr.disable("A")
+>>> rr.enable("A", effective_weight=0)
+>>> take(rr, 14)
+'BCAABAACAAABAA'
+
+>>> # initial_effective supports None | int | dict | callable
+>>> rr = roundrobin.smooth_stateful([("A", 3), ("B", 1)], initial_effective=0)
+>>> take(rr, 14)
+'AABAAABAAABAAA'
+>>> rr = roundrobin.smooth_stateful([("A", 3), ("B", 1)], initial_effective={"B": 0})
+>>> take(rr, 14)
+'AAABAAABAAABAA'
+>>> rr = roundrobin.smooth_stateful(
+...     [("A", 5), ("B", 1), ("C", 1)],
+...     initial_effective=lambda key, weight: 0 if key == "A" else weight,
+... )
+>>> take(rr, 14)
+'BCAABAACAAABAA'
+
+>>> # reset() restores effective_weight back to the current configured weight
+>>> rr = roundrobin.smooth_stateful([("A", 5), ("B", 1)])
+>>> item_a = rr.items[0]  # "A"
+>>> rr.set("A", effective=0)
+>>> item_a.effective_weight
+0
+>>> rr.reset("A")
+>>> item_a.effective_weight
+5
+
+>>> # effective_weight is clamped to [0, weight] and auto-ramps by +1 per call
+>>> rr = roundrobin.smooth_stateful([("A", 3), ("B", 1)])
+>>> rr.set("A", effective=0)
+>>> take(rr, 14)
+'BABAAABAAABAAA'
+>>> [item.effective_weight for item in rr.items]
+[3, 1]
+
+>>> # methods raise KeyError when no items match key
+>>> rr = roundrobin.smooth_stateful([("A", 1), ("B", 1)])
+>>> rr.set("missing", weight=1)
+Traceback (most recent call last):
+...
+KeyError: 'missing'
+
+>>> # keys are matched by equality, so unhashable keys work
+>>> a = {"name": "A"}
+>>> b = {"name": "B"}
+>>> rr = roundrobin.smooth_stateful([(a, 1), (b, 1)])
+>>> rr.disable({"name": "A"})
+>>> rr() is b
+True
+
+>>> # dict-based initial_effective requires hashable keys
+>>> roundrobin.smooth_stateful([([1, 2], 1)], initial_effective={[1, 2]: 0})
+Traceback (most recent call last):
+...
+TypeError: ...unhashable type: 'list'...
+```
+
+## Gotchas
+
+```python
+>>> # empty datasets are rejected
+>>> roundrobin.basic([])
+Traceback (most recent call last):
+...
+ValueError: dataset must be non-empty
+
+>>> # weights must be non-negative integers
+>>> roundrobin.smooth([("A", -1)])
+Traceback (most recent call last):
+...
+ValueError: weights must be non-negative
+
+>>> # weighted() falls back to basic RR when all weights are equal (including 0)
+>>> rr = roundrobin.weighted([("A", 0), ("B", 0)])
+>>> take(rr, 4)
+'ABAB'
+
+>>> # if total effective weight is 0 (e.g. initial_effective=0),
+>>> # smooth() / smooth_stateful() fall back to the first item to avoid returning None
+>>> rr = roundrobin.smooth_stateful([("A", 1), ("B", 1)], initial_effective=0)
+>>> take(rr, 6)
+'AABABA'
+```
+
+## Thread Safety
+
+```python
+>>> # selectors are not thread-safe; wrap calls with a lock when shared
+>>> import threading
+>>> rr = roundrobin.smooth_stateful([("A", 2), ("B", 1)])
+>>> lock = threading.Lock()
+>>> def safe_next():
+...     with lock:
+...         return rr()
+>>> safe_next()
+'A'
+
+>>> # use per-thread instances
+>>> import threading
+>>> def worker():
+...     rr = roundrobin.basic(["A", "B"])
+...     return rr()
+>>> t = threading.Thread(target=worker)
+>>> t.start()
+>>> t.join()
+```
+
+## License
+
+MIT. See `LICENSE`.

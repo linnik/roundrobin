@@ -1,0 +1,19 @@
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+
+from roundrobin.smooth_rr_item import ItemWeight
+
+
+InitialEffective = Union[None, int, Dict[Any, Optional[int]], Callable[[Any, int], Optional[int]]]
+
+
+def smooth_stateful(dataset: Iterable[Tuple[Any, int]], initial_effective: InitialEffective = ...) -> "SmoothRR": ...
+
+
+class SmoothRR:
+    items: List["ItemWeight"]
+
+    def __call__(self) -> Optional[Any]: ...
+    def set(self, key: Any, weight: Optional[int] = ..., effective: Optional[int] = ...) -> None: ...
+    def reset(self, key: Any) -> None: ...
+    def disable(self, key: Any) -> None: ...
+    def enable(self, key: Any, effective_weight: Optional[int] = ...) -> None: ...

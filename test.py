@@ -1,6 +1,8 @@
+import os
 import unittest
 
 import roundrobin
+import test_readme
 
 
 class WeightCase(unittest.TestCase):
@@ -291,6 +293,11 @@ class WeightCase(unittest.TestCase):
         self.assertTrue(cnt['A'] == 100)
         self.assertTrue(cnt['B'] == 70)
         self.assertTrue(cnt['C'] == 30)
+
+    def test_readme_doctests(self):
+        readme_path = os.path.join(os.path.dirname(__file__), "README.md")
+        results = test_readme.run_readme_doctests(readme_path)
+        self.assertEqual(results.failed, 0)
 
 
 if __name__ == "__main__":

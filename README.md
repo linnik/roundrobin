@@ -36,9 +36,14 @@ pip install roundrobin
 
 ## Stateful smooth weighted round-robin
 
-`smooth_stateful()` uses the same "smooth" algorithm as `smooth()`, but returns a selector object you can tune at runtime (health checks, slow-start).
+Use `smooth_stateful()` when you want smooth weighted balancing but also need to change weights at runtime
+(health checks, slow-start, draining, etc.). It returns a selector object that you call repeatedly to
+pick the next key.
 
-What you get:
+The key idea is that you can temporarily reduce a key's influence without changing its long-term configured
+capacity, and the selector will smoothly converge to the new distribution over subsequent calls.
+
+What you do:
 
 - call `rr()` to get the next key
 - use `rr.set(key, weight=..., effective=...)` to adjust weights
@@ -46,14 +51,23 @@ What you get:
 - use `rr.enable(key, effective_weight=0)` to re-enable (0 for slow-start; omit for full weight)
 - use `rr.reset(key)` to restore `effective_weight` to full (the current configured `weight`)
 
-Weights:
+Terminology:
 
 - **weight** - the configured (base) weight representing target capacity
 - **effective_weight** - the weight used for selection right now (clamped to `[0, weight]`)
 
-Slow-start: set `effective_weight` below `weight` (either via `initial_effective=...` at creation time, or via `set()` / `enable()` later). When `effective_weight < weight`, it auto-ramps by +1 after every `rr()` call until it reaches `weight` again (unless the item is disabled).
+Behavior:
 
-Statefulness note: the selector keeps internal per-item state (e.g., accumulated `current_weight`), so sequences after changes can look surprising and depend on prior calls. These methods affect future picks; they do not restart the schedule. If you want a clean slate after changes, create a new selector instance. The examples below create a new selector for each scenario so outputs are easy to reason about.
+- Lowering `effective_weight` (explicitly via `set(..., effective=...)` or implicitly by lowering `weight`)
+  takes effect immediately; the selector also adjusts its accumulated state so a previously heavy key
+  doesn't keep dominating after being down-weighted.
+- If `effective_weight < weight`, it auto-ramps by +1 after every `rr()` call until it reaches `weight`
+  again (unless the item is disabled).
+
+Statefulness note: the selector keeps per-item state, so sequences after changes depend on prior calls.
+These methods affect future picks; they do not "restart" the schedule. If you want a clean slate after
+changes, create a new selector instance. The examples below create a new selector for each scenario so
+outputs are easy to reason about.
 
 ```python
 >>> take = lambda source, n: ''.join([source() for _ in range(n)])
@@ -159,6 +173,32 @@ ValueError: weights must be non-negative
 >>> rr = roundrobin.smooth_stateful([("A", 1), ("B", 1)], initial_effective=0)
 >>> take(rr, 6)
 'AABABA'
+
+>>> # smooth_stateful() returns None only when there are no candidates (all disabled)
+>>> rr = roundrobin.smooth_stateful([("A", 1), ("B", 1)])
+>>> rr.disable("A")
+>>> rr.disable("B")
+>>> print(rr())
+None
+
+>>> # effective=0 is temporary unless the item is disabled (it auto-ramps by +1 per call)
+>>> rr = roundrobin.smooth_stateful([("A", 3), ("B", 1)])
+>>> rr.set("A", effective=0)
+>>> for _ in range(3):
+...     _ = rr()
+>>> [item.effective_weight for item in rr.items]
+[3, 1]
+>>> rr.disable("A")
+>>> for _ in range(3):
+...     _ = rr()
+>>> [item.effective_weight for item in rr.items]
+[0, 1]
+
+>>> # setting weight=0 removes an item from selection (without using disable())
+>>> rr = roundrobin.smooth_stateful([("A", 1), ("B", 1)])
+>>> rr.set("A", weight=0)
+>>> take(rr, 4)
+'BBBB'
 ```
 
 ## Thread Safety
